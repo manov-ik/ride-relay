@@ -163,6 +163,7 @@ Only two kinds exist — `enums.Alert`: **SMS(1)** and **WAPP(2)**. There is no 
 
 The body is never sent: the cluster's field is 32 bytes and the official app only ever writes the sender.
 No checksum. The cluster counts these in general packet `[15]` and re-pulls the last body when the rider opens the list.
+Ride Relay does not implement this packet — it only mirrors calls — so its general packet keeps `[15]`/`[16]` at zero.
 
 ### 4.2 Missed call packet (`MISSED_CALL_CHAR` = `0310676e-…`, 63 bytes)
 

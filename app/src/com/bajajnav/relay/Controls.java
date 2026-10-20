@@ -20,7 +20,7 @@ import java.util.Arrays;
  *   4  bits1-6 playlist page, bits7-8 new playlist request
  *   5  take me home       6  resume            7  pause
  *   8  next track         9  previous track   10  stop
- *  11  missed call get   12  alert get        13  launch media player
+ *  11  missed call get   12  alert get (unused)  13  launch media player
  *  14  playlist song req 15  playlist song    16  dial index   17  dial txn
  * </pre>
  *
@@ -34,7 +34,6 @@ final class Controls {
     private static int callReject;
     private static int callRejectSms;
     private static int missedGet;
-    private static int alertGet;
     private static int resume;
     private static int pause;
     private static int next;
@@ -64,7 +63,6 @@ final class Controls {
         int prevKey = b[9] & 0xFF;
         int stopKey = b[10] & 0xFF;
         int missed = b[11] & 0xFF;
-        int alert = b[12] & 0xFF;
 
         if (!bootstrapped) {
             bootstrapped = true;
@@ -78,7 +76,6 @@ final class Controls {
             prev = prevKey;
             stop = stopKey;
             missedGet = missed;
-            alertGet = alert;
             Lg.i("control bootstrap vol=" + vol + " val=" + TbtFrame.hex(b));
             return;
         }
@@ -102,10 +99,6 @@ final class Controls {
         if (missed != missedGet) {
             missedGet = missed;
             PhoneBridge.get().onMissedCallRequested(missed);
-        }
-        if (alert != alertGet) {
-            alertGet = alert;
-            PhoneBridge.get().onAlertRequested(alert);
         }
         if (resumeKey != resume) {
             resume = resumeKey;

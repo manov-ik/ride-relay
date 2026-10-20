@@ -10,11 +10,10 @@ map provider (Mappls / MapmyIndia) is what feeds the cluster. This is a small st
 companion that takes over the BLE link itself and speaks the cluster's own display
 protocol, with **Google Maps** as the source of directions.
 
-It also does the rest of what the official app pushes to the cluster — caller name with
-accept/decline from the cluster keys, SMS and WhatsApp alerts, and it keeps its own ride
-log because the official trips live in Bajaj's cloud, not on the bike.
+It also shows who is calling and lets the cluster's keys answer or hang up, and it keeps
+its own ride log because the official trips live in Bajaj's cloud, not on the bike.
 
-No root. No patched APK. No Google Maps API key. Just a normal app you install.
+No root. No patched APK, no Google Maps API key. Just a normal app you install.
 
 <br clear="right">
 
@@ -23,13 +22,13 @@ No root. No patched APK. No Google Maps API key. Just a normal app you install.
 ## How it works
 
 ```
-Google Maps navigation notification        SMS / WhatsApp / dialer notifications
+Google Maps navigation notification              dialer notifications
         │  NotificationListenerService          │  same listener
         ▼                                       ▼
-   NavParser ──┬─► ManeuverMatcher        PhoneBridge ──► caller name, alert counters
+   NavParser ──┬─► ManeuverMatcher        PhoneBridge ──► caller name, call state
         │      │      shape-matched              │
         │      └─► fallback: keywords            ▼
-        ▼                                 0410676e (alert)  0310676e (missed call)
+        ▼                                 0310676e (missed call)
     NavState  ──►  RelayService, every 800 ms
                         │
                         ▼
@@ -108,23 +107,21 @@ After the first connect the bike is remembered, so the app reconnects on its own
 - The main screen is just the status and the bike controls: **Find bike**, **Connect**,
   **Disconnect**, plus **Open rides**.
 - Tap the **gear** in the top right for **Advanced**: a relay on/off switch, the general
-  status packet mode, the three phone switches (alerts, calls, ride log), test frames (so
-  you can prove the BLE link works without Maps), and a log with **Copy log**.
+  status packet mode, the phone switches (calls, ride log), test frames (so you can prove
+  the BLE link works without Maps), and a log with **Copy log**.
 
 The **Status** panel shows the live state: notification access, link state, connected
 bike, and what is currently being sent to the cluster.
 
-### Calls and messages
+### Calls
 
 With **Calls on the cluster** enabled, an incoming call shows the contact name on the
 cluster (or the number when the phone has no name), and the cluster's accept/decline keys
-answer or hang up. **Text and WhatsApp alerts** put the sender on the cluster and light
-its alert badge; the message body stays on the phone because the cluster's text field is
-32 bytes.
+answer or hang up. Missed calls are counted and can be listed from the cluster. Messages
+are not mirrored — only calls.
 
 The app asks for the call permissions once. Notification access (step 1 above) is what
-lets it see the dialer and messaging apps at all — no call-log or contacts permission is
-used.
+lets it see the dialer at all — no call-log or contacts permission is used.
 
 ### Rides
 
@@ -164,7 +161,6 @@ to start again.
 | Nothing appears on the cluster at all | Try the other **General status packet** modes (Legacy 55 / V2 89 / Off). Test frames in **Advanced** should still work; if they don't, it's the BLE link, not the parser. |
 | No arrow when navigating, but test frames work | Check `Status → Notification access` is *Granted* and that you are navigating in **Google Maps**. |
 | Calls never show on the cluster | Advanced → **Calls on the cluster** must be on and the phone-state / answer-call permissions granted. The log should show `call watch on` and `call state -> incoming`. |
-| No SMS or WhatsApp alerts | Only those two apps are forwarded, by design. Check the log for `alert type=1` (SMS) or `alert type=2` (WhatsApp); if nothing is logged, notification access is off. |
 | Rides list stays empty | **Record rides** is off, location permission was denied, or the ride was under 200 m / 60 s — those are discarded as noise. The main screen shows `recording` while a ride is being tracked. |
 | Cluster keys do nothing | The cluster's control characteristic is polled; if the bike's firmware doesn't expose it, only the display side works. The log shows `control bootstrap` the first time a read succeeds. |
 

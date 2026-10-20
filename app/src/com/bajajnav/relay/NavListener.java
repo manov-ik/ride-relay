@@ -6,7 +6,8 @@ import android.service.notification.StatusBarNotification;
 
 /**
  * The one notification listener. It feeds Maps navigation into NavState and
- * everything else the cluster shows (calls, SMS, WhatsApp) into PhoneBridge.
+ * dialer notifications into PhoneBridge, so a caller's name can reach the
+ * cluster.
  *
  * Having a single listener matters: Android allows one component to hold the
  * notification-access grant per app, and the phone's dialer already relies on
@@ -56,8 +57,8 @@ public class NavListener extends NotificationListenerService {
         if (sbn == null) {
             return;
         }
-        // Calls and messages first: they are cheap and must not be skipped if the
-        // Maps parser below throws on an odd notification.
+        // The dialer first: it is cheap and must not be skipped if the Maps
+        // parser below throws on an odd notification.
         PhoneBridge.get().onNotification(sbn);
 
         if (!NavParser.GMAPS.equals(sbn.getPackageName())) {

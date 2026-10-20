@@ -135,18 +135,6 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
         col.addView(Ui.rule(this));
         col.addView(Ui.section(this, "Phone"));
 
-        CheckBox notifBox = new CheckBox(this);
-        notifBox.setText("Text and WhatsApp alerts on the cluster");
-        notifBox.setTextSize(14);
-        notifBox.setChecked(prefs.getBoolean(RelayService.K_NOTIF, true));
-        notifBox.setOnCheckedChangeListener((v, checked) -> {
-            PhoneBridge.get().notificationsEnabled = checked;
-            prefs.edit().putBoolean(RelayService.K_NOTIF, checked).apply();
-        });
-        col.addView(notifBox);
-        col.addView(hint("Same scope as the official app: SMS and WhatsApp only, sender name "
-                + "only — the cluster's text field is 32 bytes."));
-
         CheckBox callsBox = new CheckBox(this);
         callsBox.setText("Calls on the cluster");
         callsBox.setTextSize(14);

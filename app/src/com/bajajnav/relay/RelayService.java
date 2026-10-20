@@ -26,7 +26,6 @@ public class RelayService extends Service {
     static final String K_NAME = "device_name";
     static final String K_GEN = "general_mode";
     static final String K_RELAY = "relay_enabled";
-    static final String K_NOTIF = "notifications_enabled";
     static final String K_CALLS = "calls_enabled";
     static final String K_RIDES = "rides_enabled";
 

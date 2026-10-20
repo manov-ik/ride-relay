@@ -55,7 +55,7 @@ final class Pack {
         return out;
     }
 
-    /** 32-bit big-endian epoch seconds, the order the alert packets use. */
+    /** 32-bit big-endian epoch seconds, the order the missed-call packet uses. */
     static void putTime(byte[] b, int off, long epochSeconds) {
         int t = (int) (epochSeconds & 0xFFFFFFFFL);
         b[off] = (byte) (t >>> 24);

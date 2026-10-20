@@ -1,34 +1,18 @@
 package com.bajajnav.relay;
 
 /**
- * The two "something happened on the phone" packets.
+ * The missed-call packet.
  *
- * The cluster does not get these pushed at it and then display them: it counts
- * them (general packet bytes 13/15), shows a badge, and *pulls* the body when the
- * rider opens the list — that pull shows up as a changed byte in the control
- * characteristic. See {@link Controls}.
+ * The cluster does not get this pushed at it and then display it: it counts
+ * missed calls (general packet byte 13), shows a badge, and *pulls* the details
+ * when the rider opens the list — that pull shows up as a changed byte in the
+ * control characteristic. See {@link Controls}.
  *
- * Layouts are the official app's (ble.protocol.NewAlertsPacketV2 /
- * NewMissedCallPacketV2). Neither carries a checksum; the receiver trusts the
- * length bytes.
+ * Layout is the official app's (ble.protocol.NewMissedCallPacketV2). It carries
+ * no checksum; the receiver trusts the length bytes.
  */
 final class Alerts {
-    /** Alert type 1 = a text message, 2 = WhatsApp. From com.bajajconnect.enums.Alert. */
-    static final int TYPE_SMS = 1;
-    static final int TYPE_WHATSAPP = 2;
-
     private Alerts() {
-    }
-
-    /** 44 bytes for the ALERTS_INFO characteristic (0410676e). */
-    static byte[] alert(int type, String sender, long epochSeconds) {
-        byte[] b = new byte[44];
-        b[0] = (byte) type;
-        byte[] name = Pack.utf8(Pack.clean(sender), 32);
-        b[1] = (byte) name.length;
-        System.arraycopy(name, 0, b, 2, name.length);
-        Pack.putTime(b, 34, epochSeconds);
-        return b;
     }
 
     /** 63 bytes for the MISSED_CALL characteristic (0310676e). */

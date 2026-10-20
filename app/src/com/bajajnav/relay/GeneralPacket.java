@@ -7,7 +7,7 @@ import java.util.Arrays;
 /**
  * The general status packet written to 0210676e (GENERAL_CHAR): the cluster's
  * always-on summary of the phone — volume, battery, call state, caller name and
- * how many alerts/missed calls are waiting.
+ * how many calls were missed.
  *
  * Two variants exist in the official app and the bike firmware picks one by SKU,
  * so the mode stays user-selectable:
@@ -81,8 +81,8 @@ final class GeneralPacket {
         b[6] = (byte) phone.callRejectSmsAck();
         b[13] = (byte) phone.missedCount();
         b[14] = (byte) phone.missedCallGetAck();
-        b[15] = (byte) phone.alertCount();
-        b[16] = (byte) phone.alertGetAck();
+        // [15] alert count and [16] alert ack stay 0: Ride Relay does not mirror
+        // text messages, only calls.
         b[17] = 0;
         if (hasCaller(phone.callState())) {
             String name = caller();
@@ -118,8 +118,7 @@ final class GeneralPacket {
         b[6] = (byte) phone.callRejectSmsAck();
         b[13] = (byte) phone.missedCount();
         b[14] = (byte) phone.missedCallGetAck();
-        b[15] = (byte) phone.alertCount();
-        b[16] = (byte) phone.alertGetAck();
+        // Alert count/ack (15/16) are left at zero — see the legacy builder.
         b[17] = 0;
         if (hasCaller(phone.callState())) {
             String name = caller();

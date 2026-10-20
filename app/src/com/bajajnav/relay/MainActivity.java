@@ -89,7 +89,6 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         // The Advanced screen owns these switches; pick up whatever changed.
         RelayService.relayEnabled = prefs.getBoolean(RelayService.K_RELAY, true);
         RelayService.ridesEnabled = prefs.getBoolean(RelayService.K_RIDES, true);
-        PhoneBridge.get().notificationsEnabled = prefs.getBoolean(RelayService.K_NOTIF, true);
         PhoneBridge.get().setCallsEnabled(prefs.getBoolean(RelayService.K_CALLS, true));
         RelayService.allowLocationType();
         TripRecorder.refresh();

@@ -19,12 +19,12 @@ src/com/bajajnav/relay/
   NavParser.java           turns the Maps notification into NavState
   ManeuverMatcher.java     shape-matches the notification icon against Maps' drawables
   NavState.java            the parsed navigation state
-  PhoneBridge.java         call state, caller name, SMS/WhatsApp alerts, missed calls
+  PhoneBridge.java         call state, caller name, missed calls
   Controls.java            decodes the cluster's control characteristic
   ClusterLink.java         BLE: scan, bond, GATT handshake, write queue, reconnect, polling
   TbtFrame.java            48-byte turn-by-turn frame
   GeneralPacket.java       legacy 55-byte / v2 89-byte general status packet
-  Alerts.java              44-byte alert + 63-byte missed-call packets
+  Alerts.java              63-byte missed-call packet
   Pack.java                byte helpers (UTF-8 clamping, timestamps, checksums)
   TripStore.java           SQLite ride log
   TripRecorder.java        GPS sampling and ride bookkeeping
@@ -91,10 +91,9 @@ write fail, which is exactly how a call-state packet gets lost.
 
 **Phone state.** `PhoneBridge` listens with `PhoneStateListener` (needs `READ_PHONE_STATE`)
 for ringing/off-hook/idle, and takes the caller's name from the dialer's own notification
-through the notification listener — no contacts or call-log permission. Alerts are limited
-to the SMS apps and WhatsApp, matching the official app, because the cluster's text field
-holds 32 bytes; the sender is all that fits anyway. Answering/declining from the cluster
-uses `TelecomManager.acceptRingingCall()` / `endCall()` (`ANSWER_PHONE_CALLS`).
+through the notification listener — no contacts or call-log permission. Answering or
+declining from the cluster uses `TelecomManager.acceptRingingCall()` / `endCall()`
+(`ANSWER_PHONE_CALLS`). Text and WhatsApp alerts are deliberately not mirrored.
 
 **Ride log.** The bike sends no telemetry — the only bike→phone data is the control
 characteristic — and the official app's trips come from Bajaj's cloud. So `TripRecorder`
@@ -125,16 +124,14 @@ thinned to one point per ~40 m.
 Maneuver ids are the official app's `PrimaryTurns` values (66–90). The cluster blinks an
 arrow when the turn is under 100 m, which the app reproduces by adding 32 to the id.
 
-`Alerts` (`0410676e-…`, 44 bytes): `[0]` type (1 = SMS, 2 = WhatsApp), `[1]` sender length,
-`[2..33]` sender UTF-8, `[34..37]` epoch seconds big-endian. No checksum.
-
 `Alerts.missedCall` (`0310676e-…`, 63 bytes): `[0]` = 1, `[1]` name length,
 `[2..33]` name, `[34]` number length, `[35..52]` number, `[53..56]` epoch seconds.
 No checksum.
 
 `GeneralPacket` puts the call state in the low nibble of byte 1 (0 none, 1 incoming,
 2 outgoing, 3 active, 4 ended), the caller name at `[18]`/`[19]` + `[20..51]` (v2) or
-`[18]`/`[20]` + `[21..50]` (legacy), the missed-call and alert counts at `[13]`/`[15]`,
-and the acknowledgements the cluster compares against at `[4..17]`.
+`[18]`/`[20]` + `[21..50]` (legacy), the missed-call count at `[13]`, and the
+acknowledgements the cluster compares against at `[4..17]`. Bytes `[15]`/`[16]` (alert
+count and ack) stay zero because messages are not mirrored.
 
 See [`../docs/PROTOCOL.md`](../docs/PROTOCOL.md) for the full picture.

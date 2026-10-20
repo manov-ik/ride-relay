@@ -48,7 +48,6 @@ final class ClusterLink {
     static final UUID U_TBT = UUID.fromString("0110676e-6972-6565-6e69-676e4543544f");
     static final UUID U_GEN = UUID.fromString("0210676e-6972-6565-6e69-676e4543544f");
     static final UUID U_CTL = UUID.fromString("0a10676e-6972-6565-6e69-676e4543544f");
-    static final UUID U_ALERT = UUID.fromString("0410676e-6972-6565-6e69-676e4543544f");
     static final UUID U_MISSED = UUID.fromString("0310676e-6972-6565-6e69-676e4543544f");
     private static final UUID U_CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
@@ -68,7 +67,6 @@ final class ClusterLink {
     private BluetoothGattCharacteristic tbtChar;
     private BluetoothGattCharacteristic genChar;
     private BluetoothGattCharacteristic ctlChar;
-    private BluetoothGattCharacteristic alertChar;
     private BluetoothGattCharacteristic missedChar;
 
     private final HandlerThread thread = new HandlerThread("cluster");
@@ -112,7 +110,7 @@ final class ClusterLink {
                 return;
             }
             // GATT runs one operation at a time: a read issued while a write is
-            // in flight makes the write fail, which is how alert packets get
+            // in flight makes the write fail, which is how call packets get
             // lost. Only read when the write queue is idle.
             synchronized (queue) {
                 if (!currentDone || !queue.isEmpty() || ctlReadPending) {
@@ -424,7 +422,6 @@ final class ClusterLink {
         tbtChar = null;
         genChar = null;
         ctlChar = null;
-        alertChar = null;
         missedChar = null;
         ctlReadPending = false;
         h.removeCallbacks(ctlPollTask);
@@ -498,7 +495,6 @@ final class ClusterLink {
                 tbtChar = null;
                 genChar = null;
                 ctlChar = null;
-                alertChar = null;
                 missedChar = null;
                 ctlReadPending = false;
                 h.removeCallbacks(ctlPollTask);
@@ -533,10 +529,9 @@ final class ClusterLink {
             tbtChar = find(g, U_TBT);
             genChar = find(g, U_GEN);
             ctlChar = find(g, U_CTL);
-            alertChar = find(g, U_ALERT);
             missedChar = find(g, U_MISSED);
             Lg.i("chars tbt=" + (tbtChar != null) + " gen=" + (genChar != null)
-                    + " ctl=" + (ctlChar != null) + " alert=" + (alertChar != null)
+                    + " ctl=" + (ctlChar != null)
                     + " missed=" + (missedChar != null));
             enableControl(g);
             try {
@@ -725,11 +720,6 @@ final class ClusterLink {
         enqueue(genChar, pkt);
     }
 
-    /** 44-byte SMS/WhatsApp alert, ALERTS_INFO characteristic. */
-    void sendAlert(byte[] pkt) {
-        enqueue(alertChar, pkt);
-    }
-
     /** 63-byte missed call, MISSED_CALL characteristic. */
     void sendMissedCall(byte[] pkt) {
         enqueue(missedChar, pkt);
@@ -760,7 +750,7 @@ final class ClusterLink {
                     currentDone = true;
                     if (w.attempts < 2) {
                         // Usually a control read landed in the same slot. Retry
-                        // rather than drop a call or alert packet.
+                        // rather than drop a call packet.
                         w.attempts++;
                         h.postDelayed(this::pump, 150);
                         return;

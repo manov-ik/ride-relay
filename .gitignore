@@ -1,0 +1,26 @@
+# ---- Build output -------------------------------------------------------
+/app/build/
+/app/out/
+
+# ---- Signing keys: never commit -----------------------------------------
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# ---- Third-party binaries and decompiled output --------------------------
+# These are other people's apps. Keep them locally; do not redistribute.
+*.apk
+*.apks
+*.xapk
+*.dex
+/re-work/
+
+# ---- OS / editor --------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+*.iml
+.vscode/

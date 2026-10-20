@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ride Relay</string>
+    <string name="route_trace_caption">Route trace recorded on the phone — no map tiles, no API key.</string>
+</resources>

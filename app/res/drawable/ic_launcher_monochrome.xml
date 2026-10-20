@@ -1,0 +1,18 @@
+<!-- Monochrome layer for Android 13+ themed icons. Only the alpha channel is
+     used, so a single solid colour is correct here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M60,74 L60,50 Q60,42 52,42 L50,42"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,32 L36,42 L52,52 Z" />
+</vector>

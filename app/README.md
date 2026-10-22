@@ -10,8 +10,8 @@ AndroidManifest.xml        permissions, services, app icon
 build.sh                   aapt2 + javac + d8 + zipalign + apksigner
 res/                       app icon (vector + adaptive) and strings
 src/com/bajajnav/relay/
-  MainActivity.java        main screen: status, find/connect/disconnect, rides entry
-  AdvancedActivity.java    relay switch, packet mode, phone switches, test frames, log
+  MainActivity.java        main screen: status, find/connect/disconnect, rides entry, NFC trigger
+  AdvancedActivity.java    relay switch, packet mode, phone switches, NFC URL, test frames, log
   TripsActivity.java       ride log list + detail dialog
   Ui.java                  shared view helpers (sections, buttons, spacing)
   RelayService.java        foreground service; 800 ms TBT loop + 5 s general heartbeat

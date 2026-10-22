@@ -36,6 +36,8 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
     private static final int LOG_MAX_CHARS = 60000;
     private static final int REQ_CALLS = 200;
     private static final int REQ_RIDES = 201;
+    /** Written to the tag; MainActivity only reacts to this scheme + host. */
+    private static final String NFC_URL = "bajajrelay://connect";
 
     private SharedPreferences prefs;
     private CheckBox relayBox;
@@ -170,6 +172,34 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
                 + "Saved on this phone only."));
 
         col.addView(Ui.rule(this));
+        col.addView(Ui.section(this, "NFC"));
+
+        CheckBox nfcBox = new CheckBox(this);
+        nfcBox.setText("Connect with NFC");
+        nfcBox.setTextSize(14);
+        nfcBox.setChecked(prefs.getBoolean(RelayService.K_NFC, true));
+        nfcBox.setOnCheckedChangeListener((v, checked) ->
+                prefs.edit().putBoolean(RelayService.K_NFC, checked).apply());
+        col.addView(nfcBox);
+        col.addView(hint("Tap a written tag and Ride Relay opens and connects to the saved "
+                + "bike. The tag only presses Connect for you — it does not join the BLE link."));
+
+        TextView nfcUrl = new TextView(this);
+        nfcUrl.setText(NFC_URL);
+        nfcUrl.setTextSize(14);
+        nfcUrl.setTypeface(Typeface.MONOSPACE);
+        nfcUrl.setTextIsSelectable(true);
+        nfcUrl.setPadding(dp(28), dp(4), 0, dp(4));
+        col.addView(nfcUrl);
+
+        Button copyNfc = Ui.button(this, "Copy URL");
+        copyNfc.setOnClickListener(v -> copyText("NFC URL", NFC_URL, "URL copied"));
+        col.addView(Ui.fullWidth(copyNfc));
+
+        col.addView(hint("Write it as a URI record with any NFC writer (NFC Tools, TagWriter). "
+                + "NFC must be on, and the phone reads tags while the screen is on."));
+
+        col.addView(Ui.rule(this));
         col.addView(Ui.section(this, "Test frames"));
 
         TextView testHint = new TextView(this);
@@ -232,11 +262,14 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
     }
 
     private void copyLog() {
+        copyText(getString(R.string.app_name) + " log", logView.getText().toString(), "Log copied");
+    }
+
+    private void copyText(String label, String text, String toast) {
         ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         if (cm != null) {
-            cm.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name) + " log",
-                    logView.getText().toString()));
-            Toast.makeText(this, "Log copied", Toast.LENGTH_SHORT).show();
+            cm.setPrimaryClip(ClipData.newPlainText(label, text));
+            Toast.makeText(this, toast, Toast.LENGTH_SHORT).show();
         }
     }
 

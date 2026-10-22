@@ -107,8 +107,8 @@ After the first connect the bike is remembered, so the app reconnects on its own
 - The main screen is just the status and the bike controls: **Find bike**, **Connect**,
   **Disconnect**, plus **Open rides**.
 - Tap the **gear** in the top right for **Advanced**: a relay on/off switch, the general
-  status packet mode, the phone switches (calls, ride log), test frames (so you can prove
-  the BLE link works without Maps), and a log with **Copy log**.
+  status packet mode, the phone switches (calls, ride log), NFC connect, test frames (so
+  you can prove the BLE link works without Maps), and a log with **Copy log**.
 
 The **Status** panel shows the live state: notification access, link state, connected
 bike, and what is currently being sent to the cluster.
@@ -138,6 +138,14 @@ lives in the app's own database and **Clear ride log** deletes it.
 Requires location permission ("while using the app" is enough — the foreground service
 keeps sampling with the screen off). Without it, everything else still works; there is
 just no ride log.
+
+### NFC tag (optional)
+
+Advanced → **Connect with NFC** shows the URL `bajajrelay://connect`. Write it to any NFC
+tag as a URI record (NFC Tools, TagWriter), stick the tag on the bike, and tapping it with
+the screen on opens Ride Relay and connects to the saved bike — the same action as the
+Connect button, nothing else. The switch turns the trigger off; the app never reads tag
+contents beyond that one URL.
 
 <img src="docs/screenshot-rides.png" width="280" alt="Ride log">
 

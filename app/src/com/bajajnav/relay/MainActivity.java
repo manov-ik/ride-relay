@@ -8,6 +8,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -58,6 +61,9 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
 
     private final Map<String, String[]> seen = new LinkedHashMap<>();
 
+    /** A tag was tapped; connect as soon as the Bluetooth permission is there. */
+    private boolean pendingNfc;
+
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final Runnable ticker = new Runnable() {
         @Override
@@ -81,6 +87,17 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         requestPermissions();
         refreshStatus();
         startRelayService();
+        // Only on a fresh launch: a rotation must not press Connect again.
+        if (savedInstanceState == null) {
+            handleLaunchIntent(getIntent());
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleLaunchIntent(intent);
     }
 
     @Override
@@ -93,6 +110,7 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         RelayService.allowLocationType();
         TripRecorder.refresh();
         refreshStatus();
+        connectPending();
         ui.removeCallbacks(ticker);
         ui.postDelayed(ticker, 1000L);
     }
@@ -117,6 +135,71 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         } else {
             startService(svc);
         }
+    }
+
+    // ------------------------------------------------------------------- NFC tag
+
+    /**
+     * A tag written with {@code bajajrelay://connect} opens this activity; from
+     * here it is exactly the Connect button, no other behaviour. The switch in
+     * Advanced can turn it off.
+     */
+    private void handleLaunchIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        String action = intent.getAction();
+        if (!Intent.ACTION_VIEW.equals(action)
+                && !NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            return;
+        }
+        Uri data = intent.getData();
+        if (data == null || !"bajajrelay".equals(data.getScheme())
+                || !"connect".equals(data.getHost())) {
+            return;
+        }
+        if (!prefs.getBoolean(RelayService.K_NFC, true)) {
+            Toast.makeText(this, "NFC connect is off in Advanced", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Lg.i("nfc: tag tapped");
+        pendingNfc = true;
+        connectPending();
+    }
+
+    /** Runs the Connect button's action once Bluetooth is allowed. */
+    private void connectPending() {
+        if (!pendingNfc) {
+            return;
+        }
+        if (ClusterLink.get().isReady() || ClusterLink.get().isConnected()) {
+            pendingNfc = false;
+            return;
+        }
+        String a = savedAddress();
+        if (a == null) {
+            pendingNfc = false;
+            Toast.makeText(this, "No bike saved yet — tap Find bike", Toast.LENGTH_LONG).show();
+            return;
+        }
+        boolean allowed;
+        if (Build.VERSION.SDK_INT >= 31) {
+            allowed = checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
+                    == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                    == PackageManager.PERMISSION_GRANTED;
+        } else {
+            allowed = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+        }
+        if (!allowed) {
+            // onRequestPermissionsResult will call us again.
+            return;
+        }
+        pendingNfc = false;
+        String n = savedName();
+        Lg.i("nfc: connecting to " + a);
+        ClusterLink.get().connect(a, n == null ? a : n);
     }
 
     private String savedAddress() {
@@ -441,6 +524,7 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
             startRelayService();
             TripRecorder.refresh();
             refreshStatus();
+            connectPending();
         }
     }
 

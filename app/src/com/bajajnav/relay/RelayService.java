@@ -28,6 +28,7 @@ public class RelayService extends Service {
     static final String K_RELAY = "relay_enabled";
     static final String K_CALLS = "calls_enabled";
     static final String K_RIDES = "rides_enabled";
+    static final String K_NFC = "nfc_connect";
 
     private static final String CHANNEL = "relay";
     private static final int NOTIF_ID = 42;

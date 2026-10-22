@@ -222,12 +222,29 @@ final class NavParser {
         return o.getClass().getSimpleName() + ":" + o;
     }
 
-    /** Returns a maneuver id, or -1 when the text carries no explicit direction. */
+    /**
+     * Returns a maneuver id, or -1 when the text carries no explicit direction.
+     *
+     * The arrival wording has to be checked carefully: Maps describes the last
+     * turn as "Turn right onto X, then arrive at Y", so a bare "arrive" must not
+     * override the turn — that made the cluster announce the destination one
+     * maneuver early. Only an arrival with no direction of its own is a
+     * destination.
+     */
     static int classifyManeuver(String s) {
         if (s == null || s.isEmpty()) {
             return -1;
         }
-        if (contains(s, "arrive", "reached your destination", "you have reached", "you've reached")) {
+        if (contains(s, "reached your destination", "you have reached", "you've reached",
+                "you have arrived", "arrived at your destination")) {
+            return TbtFrame.DEST_REACHED;
+        }
+        boolean hasDirection = contains(s, "turn left", "turn right", "left onto", "right onto",
+                "left on", "right on", "keep left", "keep right", "slight", "sharp",
+                "roundabout", "rotary", "traffic circle", "fork", "merge",
+                "u-turn", "u turn", "uturn", "take the", "exit", "continue", "straight",
+                "head ", "go ");
+        if (!hasDirection && contains(s, "arrive")) {
             return TbtFrame.DEST_REACHED;
         }
         if (contains(s, "roundabout", "rotary", "traffic circle")) {

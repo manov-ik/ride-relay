@@ -62,6 +62,9 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
             ab.setTitle("Advanced");
         }
         Lg.addSink(this);
+        // Show the newest line once, when the screen opens. After this the log
+        // never scrolls on its own, so incoming lines cannot pull the page down.
+        logScroll.postDelayed(() -> logScroll.fullScroll(View.FOCUS_DOWN), 250L);
     }
 
     @Override
@@ -227,12 +230,16 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
         col.addView(Ui.section(this, "Log"));
 
         logScroll = new ScrollView(this);
+        logScroll.setFocusable(false);
         logScroll.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(260)));
         logView = new TextView(this);
         logView.setTextSize(10);
         logView.setTypeface(Typeface.MONOSPACE);
-        logView.setTextIsSelectable(true);
+        // Keep the log out of the focus chain so the page cannot scroll to it
+        // when lines are appended.
+        logView.setFocusable(false);
+        logView.setFocusableInTouchMode(false);
         logScroll.addView(logView);
         col.addView(logScroll);
 
@@ -289,9 +296,6 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
                 if (cut > 0) {
                     logView.setText(t.subSequence(cut + 1, t.length()));
                 }
-            }
-            if (logScroll != null) {
-                logScroll.post(() -> logScroll.fullScroll(View.FOCUS_DOWN));
             }
         });
     }

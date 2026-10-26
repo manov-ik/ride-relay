@@ -44,6 +44,9 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
     private Spinner genSpinner;
     private TextView logView;
     private ScrollView logScroll;
+    private TextView updateStatus;
+    private Button updateButton;
+    private boolean updateBusy;
 
     private final List<String> genModes = new ArrayList<>();
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -74,6 +77,13 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // The daily check may have finished while this screen was opening.
+        refreshUpdateUi();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
@@ -96,6 +106,34 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
         col.setPadding(dp(20), dp(14), dp(20), dp(32));
         root.addView(col);
 
+        col.addView(Ui.section(this, "Updates"));
+        TextView current = Ui.row(this, col, "Version");
+        current.setText(Updater.currentVersion(this));
+
+        updateStatus = new TextView(this);
+        updateStatus.setTextSize(12);
+        updateStatus.setTextColor(Ui.secondary(this));
+        updateStatus.setLineSpacing(0, 1.15f);
+        updateStatus.setPadding(0, dp(2), 0, dp(4));
+        col.addView(updateStatus);
+
+        CheckBox autoUpdate = new CheckBox(this);
+        autoUpdate.setText("Check GitHub once a day");
+        autoUpdate.setTextSize(14);
+        autoUpdate.setChecked(prefs.getBoolean(Updater.K_AUTO, true));
+        autoUpdate.setOnCheckedChangeListener((v, checked) ->
+                prefs.edit().putBoolean(Updater.K_AUTO, checked).apply());
+        col.addView(autoUpdate);
+        col.addView(hint("Android asks before installing; the first time, allow installs "
+                + "from Ride Relay. Only the release check talks to GitHub — rides, "
+                + "calls and the log stay on the phone."));
+
+        updateButton = Ui.button(this, "Check for updates");
+        updateButton.setOnClickListener(v -> onUpdateButton());
+        col.addView(Ui.fullWidth(updateButton));
+        refreshUpdateUi();
+
+        col.addView(Ui.rule(this));
         col.addView(Ui.section(this, "Relay"));
         relayBox = new CheckBox(this);
         relayBox.setText("Send Google Maps navigation to the cluster");
@@ -184,8 +222,8 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
         nfcBox.setOnCheckedChangeListener((v, checked) ->
                 prefs.edit().putBoolean(RelayService.K_NFC, checked).apply());
         col.addView(nfcBox);
-        col.addView(hint("Tap a written tag and Ride Relay opens and connects to the saved "
-                + "bike. The tag only presses Connect for you — it does not join the BLE link."));
+        col.addView(hint("Tap a written tag and Ride Relay connects to the saved bike in "
+                + "the background. The app does not open; the tag only presses Connect for you."));
 
         TextView nfcUrl = new TextView(this);
         nfcUrl.setText(NFC_URL);
@@ -250,6 +288,69 @@ public class AdvancedActivity extends Activity implements Lg.Sink {
         col.addView(Ui.buttonRow(this, clear, copy));
 
         return root;
+    }
+
+    // ---------------------------------------------------------------- updates
+
+    private void refreshUpdateUi() {
+        if (updateStatus == null || updateButton == null) {
+            return;
+        }
+        String available = Updater.availableVersion(this);
+        if (!available.isEmpty()) {
+            String size = Updater.availableSize(this);
+            updateStatus.setText("Version " + available + " is available"
+                    + (size.isEmpty() ? "" : " · " + size) + ".");
+            updateButton.setText("Download and install " + available);
+        } else {
+            updateStatus.setText("Last checked: " + Updater.lastCheckLabel(this));
+            updateButton.setText("Check for updates");
+        }
+        updateButton.setEnabled(!updateBusy);
+    }
+
+    private void onUpdateButton() {
+        if (updateBusy) {
+            return;
+        }
+        final String available = Updater.availableVersion(this);
+        updateBusy = true;
+        updateButton.setEnabled(false);
+
+        if (!available.isEmpty()) {
+            updateStatus.setText("Downloading " + available + "…");
+            Updater.downloadAndInstall(this, new Updater.InstallCallback() {
+                @Override
+                public void onProgress(int percent) {
+                    updateStatus.setText("Downloading " + available + "… " + percent + "%");
+                }
+
+                @Override
+                public void onResult(boolean ok, String message) {
+                    updateBusy = false;
+                    updateStatus.setText(message);
+                    updateButton.setEnabled(true);
+                    updateButton.setText("Download and install " + available);
+                    if (!ok) {
+                        Toast.makeText(AdvancedActivity.this, message,
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+            return;
+        }
+
+        updateStatus.setText("Checking GitHub…");
+        Updater.check(this, true, (ok, found, message) -> {
+            updateBusy = false;
+            updateButton.setEnabled(true);
+            if (ok) {
+                refreshUpdateUi();
+            } else {
+                updateStatus.setText(message);
+            }
+            Toast.makeText(AdvancedActivity.this, message, Toast.LENGTH_LONG).show();
+        });
     }
 
     /** Small grey explanation under a checkbox. */

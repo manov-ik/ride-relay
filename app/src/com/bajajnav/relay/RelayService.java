@@ -60,6 +60,15 @@ public class RelayService extends Service {
         return s == null ? null : s.getApplicationContext();
     }
 
+    /**
+     * True while the service object exists in this process. A cold NFC start
+     * must not press Connect itself: {@link #onCreate} already does, and a
+     * second connect would close the first attempt.
+     */
+    static boolean isRunning() {
+        return INSTANCE != null;
+    }
+
     /** Ask for a general packet on the next loop iteration, not 5 s from now. */
     static void pushGeneralNow() {
         RelayService s = INSTANCE;

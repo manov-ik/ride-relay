@@ -24,3 +24,7 @@ Thumbs.db
 .idea/
 *.iml
 .vscode/
+
+# ---- Website -------------------------------------------------------------
+# Local site. Remove this line if you want to publish it from this repo.
+/website/

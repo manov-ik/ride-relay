@@ -10,10 +10,13 @@ map provider (Mappls / MapmyIndia) is what feeds the cluster. This is a small st
 companion that takes over the BLE link itself and speaks the cluster's own display
 protocol, with **Google Maps** as the source of directions.
 
-It also shows who is calling and lets the cluster's keys answer or hang up, and it keeps
-its own ride log because the official trips live in Bajaj's cloud, not on the bike.
+It also shows who is calling, counts missed calls, and keeps its own ride log because the
+official trips live in Bajaj's cloud, not on the bike.
 
 No root. No patched APK, no Google Maps API key. Just a normal app you install.
+
+**Current release: [v1.7](RELEASE-v1.7.md)** — NFC tags now connect without opening the
+app, and Advanced can check GitHub for updates (once a day, or on demand).
 
 <br clear="right">
 
@@ -64,7 +67,12 @@ Full protocol notes, frame layouts and field-by-field findings: **[`docs/PROTOCO
 | Phone | Android 7.0+ (API 24), Bluetooth LE |
 | Bike | Bajaj / Pulsar with a smart-connected cluster that the official *Bajaj Ride Connect* app drives |
 | Navigation source | Google Maps (free, normal consumer app) |
+| Network | Only the optional update check (GitHub); can be switched off |
 | Root | Not required |
+
+Confirmed on real bikes: **Pulsar NS200** (2023, 2026 cluster firmware), **Pulsar NS400Z**
+and **Pulsar N160UG**. If the official app can show navigation on your cluster, Ride Relay
+has a good chance of working there too.
 
 ## Install
 
@@ -74,6 +82,10 @@ yourself (see [Building](#building)).
 ```sh
 adb install -r ride-relay.apk
 ```
+
+Updating from v1.6? Install v1.7 over the top: the signing key is the same, so settings,
+the saved bike and the ride log are kept. From v1.7 on, later releases can be installed
+from **Advanced → Updates** instead of downloading by hand.
 
 ### Play Protect will warn you — here's why
 
@@ -116,9 +128,8 @@ bike, and what is currently being sent to the cluster.
 ### Calls
 
 With **Calls on the cluster** enabled, an incoming call shows the contact name on the
-cluster (or the number when the phone has no name), and the cluster's accept/decline keys
-answer or hang up. Missed calls are counted and can be listed from the cluster. Messages
-are not mirrored — only calls.
+cluster (or the number when the phone has no name). Missed calls are counted and can be
+listed from the cluster. Messages are not mirrored — only calls.
 
 The app asks for the call permissions once. Notification access (step 1 above) is what
 lets it see the dialer at all — no call-log or contacts permission is used.
@@ -143,9 +154,24 @@ just no ride log.
 
 Advanced → **Connect with NFC** shows the URL `bajajrelay://connect`. Write it to any NFC
 tag as a URI record (NFC Tools, TagWriter), stick the tag on the bike, and tapping it with
-the screen on opens Ride Relay and connects to the saved bike — the same action as the
-Connect button, nothing else. The switch turns the trigger off; the app never reads tag
-contents beyond that one URL.
+the screen on connects to the saved bike. Ride Relay does not open: a transparent,
+animation-free activity starts the foreground service, connects and finishes immediately.
+Android only dispatches NFC tags to activities, so this is as close to a background
+"connect only" trigger as a normal app can get. The switch turns the trigger off; the app
+never reads tag contents beyond that one URL.
+
+### Updates
+
+Advanced → **Updates** shows the installed version and a **Check for updates** button. The
+app also checks GitHub Releases at most once a day when it is opened; the checkbox turns
+that off.
+
+When a newer release exists, the button changes to **Download and install**. The APK is
+downloaded over HTTPS, checked against the SHA-256 GitHub publishes for the release asset,
+and handed to the system installer. Android still asks for confirmation, and the first
+time you will have to allow *Install unknown apps* for Ride Relay. Nothing is installed
+silently. The updater is the only code that touches the network; rides, calls and the log
+never leave the phone.
 
 <img src="docs/screenshot-rides.png" width="280" alt="Ride log">
 

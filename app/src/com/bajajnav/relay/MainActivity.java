@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
-import android.nfc.NfcAdapter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -87,6 +86,8 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         requestPermissions();
         refreshStatus();
         startRelayService();
+        // At most one quiet GitHub release check per day (switch in Advanced).
+        Updater.autoCheck(this);
         // Only on a fresh launch: a rotation must not press Connect again.
         if (savedInstanceState == null) {
             handleLaunchIntent(getIntent());
@@ -111,6 +112,9 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
         TripRecorder.refresh();
         refreshStatus();
         connectPending();
+        // The daily check may have finished before notification permission was
+        // granted; retry the notification without another network request.
+        Updater.notifyIfAvailable(this);
         ui.removeCallbacks(ticker);
         ui.postDelayed(ticker, 1000L);
     }
@@ -140,17 +144,16 @@ public class MainActivity extends Activity implements ClusterLink.Listener {
     // ------------------------------------------------------------------- NFC tag
 
     /**
-     * A tag written with {@code bajajrelay://connect} opens this activity; from
-     * here it is exactly the Connect button, no other behaviour. The switch in
-     * Advanced can turn it off.
+     * A plain {@code bajajrelay://connect} link opens this activity and presses
+     * Connect. NFC tags take the invisible {@link NfcConnectActivity} path
+     * instead, so a tag does not bring the app to the foreground.
      */
     private void handleLaunchIntent(Intent intent) {
         if (intent == null) {
             return;
         }
         String action = intent.getAction();
-        if (!Intent.ACTION_VIEW.equals(action)
-                && !NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+        if (!Intent.ACTION_VIEW.equals(action)) {
             return;
         }
         Uri data = intent.getData();
